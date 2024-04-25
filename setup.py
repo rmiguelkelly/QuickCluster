@@ -1,23 +1,19 @@
 import numpy as np
 from setuptools import Extension, setup
 
+import os
+import platform
+
 package_name = 'quickcluster'
 
-# Bindings for the low level things
-def create_extension():
-    return Extension(
-        name="quickclusterinternal",
-        include_dirs=[
-            'include',
-            np.get_include()
-        ],
-        sources=[ 
-            'src/module/module.cc',
-        ],
-        library_dirs=[ '.' ],
-        extra_link_args=[ '-lcluster' ],
-        extra_compile_args=[ '-std=c++17' ]
-)
+extra_link_args = []
+
+def relative_path(to):
+    base = os.path.dirname(os.path.realpath(__file__))
+    return os.path.join(base, to)
+
+if platform.system() == 'Darwin':
+    extra_link_args.append('-Wl,-rpath,@loader_path/lib')
 
 # Python package initiation
 setup(
@@ -40,6 +36,20 @@ setup(
         'numpy'
     ],
     ext_modules=[ 
-        create_extension() 
+        Extension(
+            name="quickcluster._C",
+            include_dirs=[
+                'quickcluster/include',
+                np.get_include()
+            ],
+            sources=[ 
+                'quickcluster/src/module/module.cc',
+            ],
+            library_dirs=[ 'quickcluster/lib' ],
+            libraries=[ 'cluster' ],
+            extra_compile_args=[ '-std=c++17' ],
+            extra_link_args=extra_link_args
+        )
     ],
+    package_data={ 'quickcluster': [ 'lib/*.dylib' ] }
 )
