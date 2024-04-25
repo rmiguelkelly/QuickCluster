@@ -179,13 +179,13 @@ static PyMethodDef export_methods[] = {
 
 static struct PyModuleDef module = {
     PyModuleDef_HEAD_INIT,
-    "quickclusterinternal",
+    "quickcluster._C",
     "Internal module for low level bindings",
     -1,
     export_methods
 };
 
-PyMODINIT_FUNC PyInit_quickclusterinternal(void) {
+PyMODINIT_FUNC PyInit__C(void) {
     auto mod = PyModule_Create(&module);
     import_array();
     return mod;

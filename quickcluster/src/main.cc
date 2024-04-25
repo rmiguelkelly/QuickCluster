@@ -17,6 +17,7 @@ int main() {
 
     centers.resize(3, 2);
 
+    // 12 million rows total
     Array data = create_blobs(centers, 4000000);
 
     time_t t;

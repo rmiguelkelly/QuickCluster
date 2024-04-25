@@ -1,6 +1,6 @@
 
 import numpy as np
-import quickclusterinternal
+import quickcluster._C as _binding
 from random import randint
 
 class KMeans:
@@ -10,19 +10,19 @@ class KMeans:
         # Ensure that the random state is never None
         r_state = randint(0, 10000) if random_state == None else random_state
 
-        self._handle = quickclusterinternal.kmeans_init(k, max_iterations, r_state)
+        self._handle = _binding.kmeans_init(k, max_iterations, r_state)
         print(self._handle)
     
 
     def fit(self, X: np.array):
-        quickclusterinternal.kmeans_fit(self._handle, np.array(X, dtype=np.float32))
+        _binding.kmeans_fit(self._handle, np.array(X, dtype=np.float32))
         return None
 
 
     def predict(self, X: np.array):
-        quickclusterinternal.kmeans_predict()
+        _binding.kmeans_predict()
         pass
 
     
     def centroid_centers(self) -> np.array: 
-        return quickclusterinternal.kmeans_centroids(self._handle)
+        return _binding.kmeans_centroids(self._handle)

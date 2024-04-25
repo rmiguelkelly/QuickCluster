@@ -11,6 +11,8 @@ __pycache__/
 
 # C extensions
 *.so
+*.dylib
+*.dll
 
 # Distribution / packaging
 .Python
@@ -166,5 +168,4 @@ cython_debug/
 #.idea/
 
 *.o
-src/*.cc
 local_testing
