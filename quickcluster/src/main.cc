@@ -6,6 +6,7 @@
 #include <quickcluster/datasets/clusters.h>
 
 #include <iostream>
+#include <vector>
 
 int main() {
 
