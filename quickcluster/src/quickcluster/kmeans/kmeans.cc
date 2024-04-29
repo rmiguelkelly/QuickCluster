@@ -8,6 +8,7 @@
 
 using std::vector;
 using std::runtime_error;
+using std::reference_wrapper;
 
 KMeans::KMeans(size_t k, size_t iterations, int random_state, float epsilon) {
     
@@ -28,14 +29,14 @@ void KMeans::fit(const Array<float> &data) {
     auto centroids = this->create_centroids(data);
 
     // We will group the centroids here
-    vector<Array<float>> grouped_features[this->_k];
+    vector<reference_wrapper<Array<float>>> grouped_features[this->_k];
 
     // Number of rows
     size_t rows = data.rows();
 
     // Adjust the centroids here
     for (size_t iteration = 0; iteration < this->_iterations; iteration++) {
-
+        
         // Initialize empty centroid vectors
         for (size_t i = 0; i < this->_k; i++) {
             grouped_features[i] = { };
@@ -110,14 +111,14 @@ size_t KMeans::closest_centroid_index(const Array<float> &feature, const Array<f
     return closest_index;
 }
 
-bool KMeans::set_centroid_mean(const vector<Array<float>> &features, Array<float> &centroids, size_t index) const {
+bool KMeans::set_centroid_mean(const vector<reference_wrapper<Array<float>>> &features, Array<float> &centroids, size_t index) const {
 
     if (features.empty()) {
         return false;
     }
 
     size_t rows = features.size();
-    size_t cols = features[0].size();
+    size_t cols = features[0].get().size();
 
     bool converged = true;
     
@@ -126,7 +127,7 @@ bool KMeans::set_centroid_mean(const vector<Array<float>> &features, Array<float
         float total = 0.0;
 
         for (size_t i = 0; i < rows; i++) {
-            total += features[i][col];
+            total += features[i].get()[col];
         }
 
         size_t offset = index * cols;
