@@ -29,7 +29,7 @@ void KMeans::fit(const Array<float> &data) {
     auto centroids = this->create_centroids(data);
 
     // We will group the centroids here
-    vector<reference_wrapper<Array<float>>> grouped_features[this->_k];
+    vector<Array<float>> grouped_features[this->_k];
 
     // Number of rows
     size_t rows = data.rows();
@@ -111,14 +111,14 @@ size_t KMeans::closest_centroid_index(const Array<float> &feature, const Array<f
     return closest_index;
 }
 
-bool KMeans::set_centroid_mean(const vector<reference_wrapper<Array<float>>> &features, Array<float> &centroids, size_t index) const {
+bool KMeans::set_centroid_mean(const vector<Array<float>> &features, Array<float> &centroids, size_t index) const {
 
     if (features.empty()) {
         return false;
     }
 
     size_t rows = features.size();
-    size_t cols = features[0].get().size();
+    size_t cols = features[0].size();
 
     bool converged = true;
     
@@ -127,7 +127,7 @@ bool KMeans::set_centroid_mean(const vector<reference_wrapper<Array<float>>> &fe
         float total = 0.0;
 
         for (size_t i = 0; i < rows; i++) {
-            total += features[i].get()[col];
+            total += features[i][col];
         }
 
         size_t offset = index * cols;

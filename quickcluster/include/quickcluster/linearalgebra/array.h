@@ -21,6 +21,8 @@ private:
     // Used to keep track if the underlying memory is managed by this class or outside
     bool _self_managed;
 
+    int *_rc;
+
 public:
 
     // Equates to an empty array
@@ -34,7 +36,7 @@ public:
     
     // Takes a single dimension buffer and resizes it, the length of the buffer must be equal to Rows x Cols.
     // If copy is set to true, the buffer is copied and the class handles its own memory
-    Array(T* buffer, size_t Rows, size_t Cols, bool copy = false);
+    Array(T* buffer, size_t Rows, size_t Cols, bool copy = false, int *reference_count = nullptr);
 
     // Create an array of random values
     static Array<T> random(size_t N, T max = 1);
@@ -97,6 +99,8 @@ public:
 
     // Compares this array to another
     bool operator==(const Array<T> &other) const;
+
+    int __reference_count() const;
 };
 
 #endif

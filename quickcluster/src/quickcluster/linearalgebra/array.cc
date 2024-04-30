@@ -12,19 +12,20 @@ using std::cout;
 template<typename T> Array<T>::Array() {
     this->_rows = 0;
     this->_cols = 0;
-    this->_data = nullptr;
+    this->_data = nullptr; 
+    this->_rc = new int(1);
 }
 
 template<typename T> Array<T>::Array(const Array<T> &array) {
-    
-    size_t buffer_size = array.size() * sizeof(T);
-    this->_data = (T*)malloc(buffer_size);
-    memcpy(this->_data, array.data(), buffer_size);
 
+    this->_data = array._data;
     this->_rows = array.rows();
     this->_cols = array.cols();
+    this->_rc = array._rc;
 
     _self_managed = true;
+
+    *_rc += 1;
 }
 
 template<typename T> Array<T>::Array(std::initializer_list<T> list) {
@@ -37,9 +38,11 @@ template<typename T> Array<T>::Array(std::initializer_list<T> list) {
     this->_cols = list.size();
 
     _self_managed = true;
+
+    _rc = new int(1);
 }
 
-template<typename T> Array<T>::Array(T* buffer, size_t Rows, size_t Cols, bool copy) {
+template<typename T> Array<T>::Array(T* buffer, size_t Rows, size_t Cols, bool copy, int *reference_count) {
 
     size_t buffer_size = Rows * Cols;
     
@@ -55,6 +58,13 @@ template<typename T> Array<T>::Array(T* buffer, size_t Rows, size_t Cols, bool c
 
     this->_rows = Rows;
     this->_cols = Cols;
+
+    if (reference_count == nullptr) {
+        _rc = new int(1);
+    }
+    else {
+        _rc = reference_count;
+    }
 }
 
 
@@ -111,9 +121,14 @@ template<typename T> Array<T> Array<T>::range(T start, T end) {
 
 
 template<typename T> Array<T>::~Array() {
-    if (_self_managed && this->_data != nullptr) {
+
+    // Decrement the reference count
+    *_rc -= 1;
+
+    if (_self_managed && this->_data != nullptr && *_rc == 0) {
         free(this->_data);
         this->_data = nullptr;
+        delete _rc;
     }
 }
 
@@ -174,8 +189,10 @@ template<typename T> T& Array<T>::operator[](size_t index) {
 
 template<typename T> const Array<T> Array<T>::row(size_t index) const {
 
+    *_rc += 1;
+
     size_t offset = index * this->_cols;
-    return Array<T>(this->_data + offset, 1, this->_cols, false);
+    return Array<T>(this->_data + offset, 1, this->_cols, false, this->_rc);
 }
 
 
@@ -260,6 +277,9 @@ template<typename T> bool Array<T>::operator==(const Array<T> &other) const {
     return memcmp(this->_data, other.data(), this->size() * sizeof(T)) == 0;
 }
 
+template<typename T> int Array<T>::__reference_count() const {
+    return *this->_rc;
+}
 
 // Numeric types allowed for this template class
 template class Array<char>;

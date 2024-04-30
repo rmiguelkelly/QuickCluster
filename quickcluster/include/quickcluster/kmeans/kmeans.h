@@ -29,7 +29,7 @@ private:
     size_t closest_centroid_index(const Array<float> &feature, const Array<float> &centroids) const;
 
     // From a group of features, set the mean of the centroid at index
-    bool set_centroid_mean(const vector<reference_wrapper<Array<float>>> &features, Array<float> &centroids, size_t index) const;
+    bool set_centroid_mean(const vector<Array<float>> &features, Array<float> &centroids, size_t index) const;
 
 public:
 
