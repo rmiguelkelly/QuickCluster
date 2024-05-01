@@ -14,15 +14,15 @@ class KMeans:
         print(self._handle)
     
 
-    def fit(self, X: np.array):
+    def fit(self, X: np.ndarray):
         _binding.kmeans_fit(self._handle, np.array(X, dtype=np.float32))
         return None
 
 
-    def predict(self, X: np.array):
+    def predict(self, X: np.ndarray) -> np.ndarray:
         _binding.kmeans_predict()
         pass
 
     
-    def centroid_centers(self) -> np.array: 
+    def centroid_centers(self) -> np.ndarray:
         return _binding.kmeans_centroids(self._handle)

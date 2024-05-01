@@ -24,7 +24,6 @@ template<typename T> Array<T>::Array(const Array<T> &array) {
     this->_rc = array._rc;
 
     _self_managed = true;
-
     *_rc += 1;
 }
 
@@ -38,7 +37,6 @@ template<typename T> Array<T>::Array(std::initializer_list<T> list) {
     this->_cols = list.size();
 
     _self_managed = true;
-
     _rc = new int(1);
 }
 

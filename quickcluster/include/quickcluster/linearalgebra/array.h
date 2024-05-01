@@ -21,6 +21,7 @@ private:
     // Used to keep track if the underlying memory is managed by this class or outside
     bool _self_managed;
 
+    // Keep track of a reference count
     int *_rc;
 
 public:
