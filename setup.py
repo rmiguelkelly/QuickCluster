@@ -51,5 +51,12 @@ setup(
             extra_link_args=extra_link_args
         )
     ],
-    package_data={ 'quickcluster': [ 'lib/*.dylib' ] }
+    package_data={
+        'quickcluster': [
+            'lib/*.dylib',
+            'lib/*.so',
+            'lib/*.dll',
+            'include/**',
+        ]
+    }
 )
