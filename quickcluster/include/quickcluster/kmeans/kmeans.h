@@ -8,6 +8,17 @@
 using std::vector;
 using std::reference_wrapper;
 
+/// @brief Adds two buffers
+/// @tparam T numeric type
+/// @param dst adds the src buffer to this buffer of values
+/// @param src this buffer is added to dst and is not modified
+/// @param N number of elements in src and dst
+template<typename T> inline void buffer_sum(T *dst, const T *src, size_t N) {
+    for (size_t i = 0; i < N; i++) {
+        dst[i] += src[i];
+    }
+}
+
 /** @brief A KMeans implementation in C++
  * 
  */
@@ -30,6 +41,8 @@ private:
 
     // From a group of features, set the mean of the centroid at index
     bool set_centroid_mean(const vector<Array<float>> &features, Array<float> &centroids, size_t index) const;
+
+    Array<float> compute_mean(const Array<float> &data, size_t *indexes) const;
 
 public:
 

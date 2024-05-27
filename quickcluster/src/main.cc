@@ -33,6 +33,7 @@ int main() {
     sw.stop();
 
     printf("Kmeans took %dms\n", (int)sw.elapsed());
+    kmeans.centroids().__debug_print();
 
     return 0;
 }
