@@ -8,7 +8,6 @@
 
 using std::vector;
 using std::runtime_error;
-using std::reference_wrapper;
 
 KMeans::KMeans(size_t k, size_t iterations, int random_state, float epsilon) {
     
@@ -31,6 +30,8 @@ void KMeans::fit(const Array<float> &data) {
     // We will group the centroids here
     vector<Array<float>> grouped_features[this->_k];
 
+    size_t *centroid_index_for_data = new size_t[data.rows()];
+
     // Number of rows
     size_t rows = data.rows();
 
@@ -47,25 +48,18 @@ void KMeans::fit(const Array<float> &data) {
 
             auto feature = data.row(i);
 
-            size_t centroid_index = closest_centroid_index(feature, centroids);
-
-            // Add this centroid to the specific group
-            grouped_features[centroid_index].push_back(feature);
+            // Get the clostest centroid index
+            size_t centroid_index = 0;//closest_centroid_index(feature, centroids);
+            centroid_index_for_data[i] = centroid_index;
         }
 
-        // Find the mean
-
-        bool converged = true;
-
-        for (size_t i = 0; i < this->_k; i++) {
-            converged &= set_centroid_mean(grouped_features[i], centroids, i);
-        }
-
-        // If the clusters converged then the fitting can terminate
-        if (converged) {
-            break;
-        }
+        // We now have an array of N rows of closest centroid indexes
+        auto centroid_avg = compute_mean(data, centroid_index_for_data);
+        centroids = centroid_avg;
     }
+
+    // Delete the centroid index buffer
+    delete [] centroid_index_for_data;
 
     // use these centroids to predeict others
     this->_centroids = centroids.copy();
@@ -111,36 +105,43 @@ size_t KMeans::closest_centroid_index(const Array<float> &feature, const Array<f
     return closest_index;
 }
 
-bool KMeans::set_centroid_mean(const vector<Array<float>> &features, Array<float> &centroids, size_t index) const {
+Array<float> KMeans::compute_mean(const Array<float> &data, size_t *indexes) const {
 
-    if (features.empty()) {
-        return false;
+    size_t k = this->_k;
+
+    size_t rows = data.rows();
+    size_t cols = data.cols();
+
+    size_t clusters_per_index[k];
+    float feature_sums[cols * k];
+
+    // Zero it out
+    memset(clusters_per_index, 0, k * sizeof(size_t));
+    memset(feature_sums, 0, cols * k * sizeof(float));
+
+    for (size_t i = 0; i < rows; i++) {
+        size_t centroid_index = indexes[i];
+        size_t ptr_offset = cols * centroid_index;
+
+        buffer_sum(feature_sums + ptr_offset, data.row(i).data(), cols);
+        clusters_per_index[centroid_index] += 1;
     }
 
-    size_t rows = features.size();
-    size_t cols = features[0].size();
+    // Compute the mean
+    for (size_t i = 0; i < k; i++) {
 
-    bool converged = true;
-    
-    for (size_t col = 0; col < cols; col++) {
-
-        float total = 0.0;
-
-        for (size_t i = 0; i < rows; i++) {
-            total += features[i][col];
+        if (clusters_per_index[i] == 0) {
+            continue;
         }
 
-        size_t offset = index * cols;
+        float divisor = static_cast<float>(clusters_per_index[i]);
 
-        float mean = total / rows;
-
-        // Check for convergence
-        converged &= abs(mean - centroids[col + offset]) <= this->_epsilon;
-
-        centroids.set(col + offset, mean);
+        for (size_t j = 0; j < cols; j++) {
+            feature_sums[j + (i * cols)] /= divisor;
+        }
     }
 
-    return converged;
+    return Array<float>(feature_sums, k, cols, true);
 }
 
 Array<int> KMeans::predict(const Array<float> &data) const {
