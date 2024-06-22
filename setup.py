@@ -56,6 +56,7 @@ setup(
             'lib/*.dylib',
             'lib/*.so',
             'lib/*.dll',
+            'lib/*.metallib',
             'include/**',
         ]
     }

@@ -99,7 +99,9 @@ public:
     Array<T> copy() const;
 
     // Compares this array to another
-    bool operator==(const Array<T> &other) const;
+    bool operator==(const Array<T> &other) const;   
+
+    void operator=(const Array<T> &other);
 
     int __reference_count() const;
 };

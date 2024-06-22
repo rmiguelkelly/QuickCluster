@@ -279,6 +279,18 @@ template<typename T> int Array<T>::__reference_count() const {
     return *this->_rc;
 }
 
+template<typename T> void Array<T>::operator=(const Array<T> &other) {
+
+    size_t buffer_size = sizeof(T) * other.size();
+
+    this->_data = (T*)malloc(buffer_size);
+    memcpy(this->_data, other.data(), buffer_size);
+
+    this->_rows = other.rows();
+    this->_cols = other.cols();
+    this->_self_managed = true;
+}
+
 // Numeric types allowed for this template class
 template class Array<char>;
 template class Array<int>;

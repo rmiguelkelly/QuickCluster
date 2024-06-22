@@ -3,6 +3,18 @@
 #define OPERATIONS_H
 
 #include <stdlib.h>
+#include <iostream>
+
+using std::cout;
+
+template<typename T> void print_buffer(const T* buffer, size_t N) {
+    cout << "[ ";
+    for (size_t i = 0; i < N; i++) {
+        cout << buffer[i];
+        cout << ", ";
+    }
+    cout << " ]\n";
+}
 
 // Transposes in-place a matrix expressed as a single dimension buffer of values
 template<typename T> void transpose_buffer(const T *original, T* result, size_t rows, size_t cols) {
