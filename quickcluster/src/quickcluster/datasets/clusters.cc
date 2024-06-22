@@ -25,7 +25,7 @@ Array<float> create_blobs(const Array<float> &centers, size_t points_per_cluster
         for (size_t j = 0; j < points_per_cluster; j++) {
             
             float angle = 2 * M_PI * randf();
-            float len = randf() + 10.0;
+            float len = randf() + 1.0;
 
             float x = center_x + cos(angle) * len;
             float y = center_y + sin(angle) * len;

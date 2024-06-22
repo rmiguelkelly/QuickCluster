@@ -4,6 +4,13 @@
 
 #include <quickcluster/linearalgebra/array.h>
 #include <quickcluster/linearalgebra/distance.h>
+#include <quickcluster/device/common.h>
+
+#ifdef __APPLE__
+#include <quickcluster/device/metal.h>
+#endif
+
+#define EPSILON 0.001
 
 using std::vector;
 using std::reference_wrapper;
@@ -31,6 +38,8 @@ private:
     float _epsilon;
     Array<float> _centroids;
 
+    DeviceHandle device_handle;
+
     // Creates K random clusters, returns a matrix of K rows of features with N dimensions
     Array<float> create_centroids(const Array<float> &data) const;
 
@@ -39,10 +48,14 @@ private:
     // centroids    - K x Dimensions centroids
     size_t closest_centroid_index(const Array<float> &feature, const Array<float> &centroids) const;
 
-    // From a group of features, set the mean of the centroid at index
-    bool set_centroid_mean(const vector<Array<float>> &features, Array<float> &centroids, size_t index) const;
+    /// Computes the closest centroid index for all feature
+    void compute_clostest_centroids_index(const Array<float> &data, const Array<float> &centroids, size_t *indexes) const;
 
+    /// From a list of closest indexes per feature compute their mean
     Array<float> compute_mean(const Array<float> &data, size_t *indexes) const;
+
+    // Checks if the new computed centroids are close enough to the previous centroids
+    bool did_converge(const Array<float> c1, const Array<float> c2) const;
 
 public:
 
@@ -52,8 +65,9 @@ public:
     * @param[in]  iterations  Maximum number of iterations before stopping
     * @param[in]  random_state  Used to seed the RNG
     * @param[in]  epsilon Arbitary number used to check if the clusters converged
+    * @param[in]  device_handle Pointer to a gpu device handler, null by default
     */
-    KMeans(size_t k, size_t iterations, int random_state, float epsilon = 0.00001);
+    KMeans(size_t k, size_t iterations, int random_state, float epsilon = EPSILON, DeviceHandle device_handle = nullptr);
 
     /** @brief Fits the data to the model
     * @param[in]  data  The data is a 2 dimensional array where each row represents a set of features

@@ -1,6 +1,7 @@
 
 #include <quickcluster/kmeans/kmeans.h>
 #include <quickcluster/benchmark/stopwatch.h>
+#include <quickcluster/linearalgebra/operations.h>
 
 #include <iostream>
 #include <vector>
@@ -9,52 +10,82 @@
 using std::vector;
 using std::runtime_error;
 
-KMeans::KMeans(size_t k, size_t iterations, int random_state, float epsilon) {
+DeviceType get_target_device(bool use_device) {
+
+    if (!use_device) {
+        return DeviceType::DeviceTypeCPU;
+    }
+
+    #ifdef __APPLE__
+    return DeviceType::DeviceTypeGPUMetal;
+    #endif
+
+    #ifdef __NVCC__
+    return DeviceType::DeviceTypeGPUCuda;
+    #endif
+
+    return DeviceType::DeviceTypeCPU;
+}
+
+KMeans::KMeans(size_t k, size_t iterations, int random_state, float epsilon, DeviceHandle device_handle) {
     
     this->_k = k;
     this->_iterations = iterations;
     this->_fitted = false;
     this->_epsilon = epsilon;
+    this->device_handle = device_handle;
 
     srand(random_state);
 }
 
 void KMeans::fit(const Array<float> &data) {
 
+    size_t N = data.rows();
+
     // 1. Initialize k centroids with random points
     //      We need the min and max for each feature
 
     // Create K centroids with randomly initialized points
-    auto centroids = this->create_centroids(data);
+    Array centroids = this->create_centroids(data);
 
-    // We will group the centroids here
-    vector<Array<float>> grouped_features[this->_k];
-
-    size_t *centroid_index_for_data = new size_t[data.rows()];
+    // Used to store the index of the closest centroid at the respective index
+    // Each index correlates to the feature at the same index in the data
+    size_t *centroid_index_for_data = new size_t[N];
+    memset(centroid_index_for_data, 0, sizeof(size_t) * N);
 
     // Number of rows
-    size_t rows = data.rows();
+
+    // Some data for the GPU
+    DataContext datacontext;
+    datacontext.cols = data.cols();
+    datacontext.rows = N;
+    datacontext.k = this->_k;
 
     // Adjust the centroids here
     for (size_t iteration = 0; iteration < this->_iterations; iteration++) {
-        
-        // Initialize empty centroid vectors
-        for (size_t i = 0; i < this->_k; i++) {
-            grouped_features[i] = { };
-        }
 
         // Group the centroids into groups
-        for (size_t i = 0; i < rows; i++) {
-
-            auto feature = data.row(i);
-
-            // Get the clostest centroid index
-            size_t centroid_index = 0;//closest_centroid_index(feature, centroids);
-            centroid_index_for_data[i] = centroid_index;
+        switch (get_target_device(device_handle != nullptr))
+        {
+            case DeviceType::DeviceTypeCPU:
+                this->compute_clostest_centroids_index(data, centroids, centroid_index_for_data);
+                break;
+            case DeviceType::DeviceTypeGPUMetal:
+                metal_compute_nearest_centroids(device_handle, data.data(), centroids.data(), &datacontext, centroid_index_for_data);
+                break;
+            case DeviceType::DeviceTypeGPUCuda:
+                // TODO: Integrate CUDA
+                break;
         }
 
+
         // We now have an array of N rows of closest centroid indexes
-        auto centroid_avg = compute_mean(data, centroid_index_for_data);
+        Array centroid_avg = compute_mean(data, centroid_index_for_data);
+
+        if (this->did_converge(centroids, centroid_avg)) {
+            break;
+        }
+
         centroids = centroid_avg;
     }
 
@@ -85,12 +116,12 @@ size_t KMeans::closest_centroid_index(const Array<float> &feature, const Array<f
 
     // feature:     1 X Cols array
     // centroids:   K X Cols array
-    size_t rows = centroids.rows();
+    size_t centroid_count = centroids.rows();
 
     float min_distance = 0.0;
     size_t closest_index = 0;
 
-    for (size_t i = 0; i < rows; i++) {
+    for (size_t i = 0; i < centroid_count; i++) {
 
         auto centroid = centroids.row(i);
 
@@ -105,6 +136,20 @@ size_t KMeans::closest_centroid_index(const Array<float> &feature, const Array<f
     return closest_index;
 }
 
+void KMeans::compute_clostest_centroids_index(const Array<float> &data, const Array<float> &centroids, size_t *indexes) const {
+
+    size_t N = data.rows();
+
+    for (size_t i = 0; i < N; i++) {
+
+        auto feature = data.row(i);
+
+        // Get the clostest centroid index
+        size_t centroid_index = closest_centroid_index(feature, centroids);
+        indexes[i] = centroid_index;
+    }
+}
+
 Array<float> KMeans::compute_mean(const Array<float> &data, size_t *indexes) const {
 
     size_t k = this->_k;
@@ -115,7 +160,6 @@ Array<float> KMeans::compute_mean(const Array<float> &data, size_t *indexes) con
     size_t clusters_per_index[k];
     float feature_sums[cols * k];
 
-    // Zero it out
     memset(clusters_per_index, 0, k * sizeof(size_t));
     memset(feature_sums, 0, cols * k * sizeof(float));
 
@@ -142,6 +186,19 @@ Array<float> KMeans::compute_mean(const Array<float> &data, size_t *indexes) con
     }
 
     return Array<float>(feature_sums, k, cols, true);
+}
+
+bool KMeans::did_converge(const Array<float> c1, const Array<float> c2) const {
+
+    float max_distance = 0.0;
+
+    size_t N = c1.rows();
+
+    for (size_t i = 0; i < N; i++) {
+        max_distance = std::max(max_distance, distance_euclidean(c1, c2));
+    }
+
+    return max_distance <= this->_epsilon; 
 }
 
 Array<int> KMeans::predict(const Array<float> &data) const {

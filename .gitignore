@@ -169,3 +169,4 @@ cython_debug/
 
 *.o
 local_testing
+main.cc
