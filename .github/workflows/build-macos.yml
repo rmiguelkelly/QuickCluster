@@ -1,0 +1,27 @@
+
+name: QuickCluster MacOS CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+    - name: Build dynamic library
+      run: mkdir build lib && make darwin
+      working-directory: 'quickcluster'
+    - name: Build Python library
+      run: pip install .
+
+
+
+
+
