@@ -1,0 +1,24 @@
+
+name: QuickCluster CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build for MacOS
+      run: make darwin
+      working-directory: 'QuickCluster/quickcluster'
+
+
+
+
+
