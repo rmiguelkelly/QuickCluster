@@ -11,7 +11,7 @@ OPTIMIZE=-O3
 
 # Compiler options
 CC=clang++
-OPTIONS=${HEADERS} ${WARNINGS} ${OPTIMIZE}
+OPTIONS=${HEADERS} ${WARNINGS} ${OPTIMIZE} -fPIC
 
 
 # Apple related build things
@@ -24,13 +24,13 @@ METAL_PLATFORM=macosx
 darwin: kmeans.o stopwatch.o clusters.o metal.o
 	${CC} ${OPTIONS} ${CXX} ${OBJC_FRAMEWORKS} \
 	build/kmeans.o build/array.o build/distance.o build/stopwatch.o build/clusters.o build/metal.o build/metaldevicemanager.o \
-	-fPIC -shared -o lib/libcluster.dylib
+	-shared -o lib/libcluster.dylib
 
 # Build for Linux
 linux: kmeans.o stopwatch.o clusters.o
 	${CC} ${OPTIONS} ${CXX} \
 	build/kmeans.o build/array.o build/distance.o build/stopwatch.o build/clusters.o \
-	-fPIC -shared -o lib/libcluster.so
+	-shared -o lib/libcluster.so
 
 
 # Platform independent logic for KMeans

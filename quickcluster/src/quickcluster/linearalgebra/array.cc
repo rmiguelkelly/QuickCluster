@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iostream>
 #include <random>
+#include <cstring>
 
 using std::cout;
 
