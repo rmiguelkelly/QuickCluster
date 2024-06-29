@@ -6,26 +6,10 @@
 #include <iostream>
 #include <vector>
 #include <math.h>
+#include <cstring>
 
 using std::vector;
 using std::runtime_error;
-
-DeviceType get_target_device(bool use_device) {
-
-    if (!use_device) {
-        return DeviceType::DeviceTypeCPU;
-    }
-
-    #ifdef __APPLE__
-    return DeviceType::DeviceTypeGPUMetal;
-    #endif
-
-    #ifdef __NVCC__
-    return DeviceType::DeviceTypeGPUCuda;
-    #endif
-
-    return DeviceType::DeviceTypeCPU;
-}
 
 KMeans::KMeans(size_t k, size_t iterations, int random_state, float epsilon, DeviceHandle device_handle) {
     
@@ -64,19 +48,23 @@ void KMeans::fit(const Array<float> &data) {
     // Adjust the centroids here
     for (size_t iteration = 0; iteration < this->_iterations; iteration++) {
 
-        // Group the centroids into groups
-        switch (get_target_device(device_handle != nullptr))
-        {
-            case DeviceType::DeviceTypeCPU:
-                this->compute_clostest_centroids_index(data, centroids, centroid_index_for_data);
-                break;
-            case DeviceType::DeviceTypeGPUMetal:
-                metal_compute_nearest_centroids(device_handle, data.data(), centroids.data(), &datacontext, centroid_index_for_data);
-                break;
-            case DeviceType::DeviceTypeGPUCuda:
-                // TODO: Integrate CUDA
-                break;
+        #ifdef __APPLE__
+        if (device_handle) {
+
+            // Device handle is present so do these calculations on the GPU
+            metal_compute_nearest_centroids(device_handle, data.data(), centroids.data(), &datacontext, centroid_index_for_data);
         }
+        else {
+
+            // Default back to the CPU
+            this->compute_clostest_centroids_index(data, centroids, centroid_index_for_data);
+        }
+        #elif defined(__NVCC__)
+        // TODO implement CUDA
+        exit(0)
+        #else
+        this->compute_clostest_centroids_index(data, centroids, centroid_index_for_data);
+        #endif
 
 
         // We now have an array of N rows of closest centroid indexes

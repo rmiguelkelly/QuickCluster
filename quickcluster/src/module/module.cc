@@ -10,7 +10,9 @@
 #include <quickcluster/linearalgebra/array.h>
 
 // GPU stuff
+#ifdef __APPLE__
 #include <quickcluster/device/metal.h>
+#endif
 
 // Capsule object identifiers
 #define KMEANS_POINTER_ID "kmeans.internal_handle"
@@ -29,8 +31,10 @@ void device_destructor(PyObject* arg) {
     // Get the handle for the device
     DeviceHandle handle = PyCapsule_GetPointer(arg, DEVICE_HANDLE_ID);
 
+    #ifdef __APPLE__
     // Free the handle
     metal_release_device(&handle);
+    #endif
 }
 
 
@@ -198,7 +202,12 @@ static PyObject* device_retrieve_gpu(PyObject *self, PyObject *args) {
 
     gpu_device device;
 
-    int result = metal_find_device(&device);
+    int result = -1;
+
+    #ifdef __APPLE__
+    result = metal_find_device(&device);
+    #endif
+
 
     // Unable to get GPU so return nothing
     if (result != 0) {
@@ -228,7 +237,11 @@ static PyObject* device_create_handle(PyObject *self, PyObject *args) {
 
     DeviceHandle handle = nullptr;
 
-    int result = metal_init_device(&handle, lib_path);
+    int result = -1;
+    
+    #ifdef __APPLE__
+    result = metal_init_device(&handle, lib_path);
+    #endif
 
     if (result != 0) {
         PyErr_SetString(PyExc_RuntimeError, "Unable to initiate the GPU on this computer");
