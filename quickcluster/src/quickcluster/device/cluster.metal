@@ -14,7 +14,7 @@ inline float euclidean_distance(const device float *vec1, const device float *ve
         sum += pow(vec1[i] - vec2[i], 2);
     }
     
-    return sum / static_cast<float>(N);
+    return sqrt(sum);
 }
 
 
